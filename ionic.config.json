@@ -1,0 +1,8 @@
+{
+  "name": "micro-business-customer",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular",
+  "pro_id": "52d0e4c2"
+}
