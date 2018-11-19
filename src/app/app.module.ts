@@ -41,9 +41,10 @@ export class MyErrorHandler implements ErrorHandler {
     Pro.monitoring.handleNewError(err);
     // Remove this if you want to disable Ionic's auto exception handling
     // in development mode.
-    if (this.ionicErrorHandler) {
-     this.ionicErrorHandler.handleError(err);
-    }
+    // if (this.ionicErrorHandler) {
+    //   console.log('henry:' + err);
+    //  this.ionicErrorHandler.handleError(err);
+    // }
   }
 }
 @NgModule({
@@ -57,14 +58,14 @@ export class MyErrorHandler implements ErrorHandler {
     IonicStorageModule.forRoot()
   ],
   providers: [
-    Camera,
-    File,
-    WebView,
     StatusBar,
     SplashScreen,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     IonicErrorHandler,
-    [{ provide: ErrorHandler, useClass: MyErrorHandler }]
+    { provide: ErrorHandler, useClass: MyErrorHandler },
+    Camera,
+    File,
+    WebView
   ],
   bootstrap: [AppComponent]
 })

@@ -31,6 +31,7 @@ export class ListPage implements OnInit {
   }
 
   ngOnInit() {
+    throw new Error('test henry');
   }
   // add back when alpha.4 is out
   // navigate(item) {

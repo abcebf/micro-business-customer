@@ -1,3 +1,4 @@
+import { DebugService } from './../services/debug.service';
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Camera, CameraOptions, PictureSourceType } from '@ionic-native/Camera/ngx';
 import { File, FileEntry } from '@ionic-native/File/ngx';
@@ -7,6 +8,7 @@ import { Storage } from '@ionic/storage';
 
 import { finalize } from 'rxjs/operators';
 import { ActionSheetController, ToastController, Platform, LoadingController } from '@ionic/angular';
+import { normalizeURL} from 'ionic-angular';
 
 const STORAGE_KEY = 'my_images';
 
@@ -18,6 +20,7 @@ const STORAGE_KEY = 'my_images';
 export class HomePage implements OnInit {
   images = [];
   constructor(
+    private debugService: DebugService,
     private camera: Camera,
     private file: File,
     private http: HttpClient,
@@ -56,8 +59,7 @@ export class HomePage implements OnInit {
     if (img === null) {
       return '';
     } else {
-      const converted = this.webview.convertFileSrc(img);
-      return converted;
+      return normalizeURL(img);
     }
   }
 
@@ -103,9 +105,14 @@ export class HomePage implements OnInit {
     };
 
     this.camera.getPicture(options).then(imagePath => {
-      const currentName = imagePath.substr(imagePath.lastIndexOf('/') + 1);
-      const correctPath = imagePath.substr(0, imagePath.lastIndexOf('/') + 1);
-      this.copyFileToLocalDir(correctPath, currentName, this.createFileName());
+      try {
+        const currentName = imagePath.substr(imagePath.lastIndexOf('/') + 1);
+        const correctPath = imagePath.substr(0, imagePath.lastIndexOf('/') + 1);
+        this.debugService.debug(`currentName: ${currentName}, correctPath: ${correctPath}`);
+        this.copyFileToLocalDir(correctPath, currentName, this.createFileName());
+      } catch (e) {
+        throw new Error(e);
+      }
     });
   }
 
@@ -118,25 +125,36 @@ export class HomePage implements OnInit {
 
   copyFileToLocalDir(namePath, currentName, newFileName) {
     this.file.copyFile(namePath, currentName, this.file.dataDirectory, newFileName).then(success => {
-      this.updateStoredImages(newFileName);
+      try {
+        this.debugService.debug(`copyFile ${newFileName}`);
+        this.updateStoredImages(newFileName);
+      } catch (e) {
+        throw new Error(e);
+      }
     }, error => {
+      this.debugService.debug(`copyFile failed`);
       this.presentToast('Error while storing file.');
     });
   }
 
   updateStoredImages(name) {
     this.storage.get(STORAGE_KEY).then(images => {
+      this.debugService.debug(`images ${images}`);
       const arr = JSON.parse(images);
       if (!arr) {
+        this.debugService.debug(`single: ${name}`);
         const newImages = [name];
         this.storage.set(STORAGE_KEY, JSON.stringify(newImages));
       } else {
         arr.push(name);
+        this.debugService.debug(`push: ${name}`);
         this.storage.set(STORAGE_KEY, JSON.stringify(arr));
       }
 
       const filePath = this.file.dataDirectory + name;
+      this.debugService.debug(`filePath: ${filePath}`);
       const resPath = this.pathForImage(filePath);
+      this.debugService.debug(`resPath: ${resPath}`);
 
       const newEntry = {
         name: name,
@@ -144,6 +162,7 @@ export class HomePage implements OnInit {
         filePath: filePath
       };
 
+      this.debugService.debug(`images: ${this.images}`);
       this.images = [newEntry, ...this.images];
       this.ref.detectChanges(); // trigger change detection cycle
     });
@@ -206,6 +225,8 @@ export class HomePage implements OnInit {
         } else {
           this.presentToast('File upload failed.');
         }
+      }, error => {
+        this.presentToast('File upload failed.');
       });
   }
 }
